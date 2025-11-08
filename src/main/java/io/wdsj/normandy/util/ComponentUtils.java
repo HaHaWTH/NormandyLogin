@@ -15,6 +15,7 @@ public final class ComponentUtils {
         return miniMessage.deserialize(convertLegacyToMiniMessage(message, false, AMPERSAND_CHAR, true));
     }
     public static void sendMessage(Audience player, String message) {
+        if (message.isBlank()) return;
         Component messageComponent = parseMiniMessage(message);
         player.sendMessage(messageComponent);
     }
