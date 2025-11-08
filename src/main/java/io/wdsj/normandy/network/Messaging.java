@@ -124,10 +124,11 @@ public class Messaging implements PluginMessageListener {
         if (plugin.getKeyStorage().getKeyData(player.getUniqueId()) != null) {
             CompletableFuture.supplyAsync(() -> CryptoUtils.generateChallenge(64), NormandyLogin.EXECUTOR_POOL).thenAccept(challenge -> {
                 plugin.getPendingChallenges().put(player.getUniqueId(), challenge);
-
-                plugin.getPacketSender().sendHandshakeAck(player);
-                plugin.getPacketSender().sendLoginChallenge(player, challenge);
-                NormandyLogin.logger().info("Sent login challenge to {}", player.getName());
+                player.getScheduler().runDelayed(plugin, task -> {
+                    plugin.getPacketSender().sendHandshakeAck(player);
+                    plugin.getPacketSender().sendLoginChallenge(player, challenge);
+                    NormandyLogin.logger().info("Sent login challenge to {}", player.getName());
+                }, null, 10L);
 
                 plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> {
                     if (plugin.getPendingChallenges().containsKey(player.getUniqueId())) {
@@ -155,9 +156,11 @@ public class Messaging implements PluginMessageListener {
             if (CryptoUtils.verify(challenge, signature, CryptoUtils.stringToPublicKey(publicKeyStr.publicKey()))) {
                 ComponentUtils.sendMessage(player, NormandyLogin.config().message_authentication_success);
                 NormandyLogin.logger().info("Player {} authenticated successfully via NormandyLogin.", player.getName());
-                if (!NormandyLogin.getHook().isPlayerLogin(playerUuid)) {
-                    NormandyLogin.getHook().loginPlayer(playerUuid);
-                }
+                player.getScheduler().execute(plugin, () -> {
+                    if (!NormandyLogin.getHook().isPlayerLogin(playerUuid)) {
+                        NormandyLogin.getHook().loginPlayer(playerUuid);
+                    }
+                }, null, 5L);
             } else {
                 player.getScheduler().execute(plugin, () -> {
                     ComponentUtils.kick(player, NormandyLogin.config().message_invalid_signature);

@@ -13,7 +13,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class KeyStorage {
@@ -46,11 +45,14 @@ public class KeyStorage {
     }
 
     public ServerKeyData getKeyData(UUID playerUuid) {
-        try {
-            return cache.get(playerUuid, () -> getKeyDataFromFile(playerUuid));
-        } catch (ExecutionException ignored) {
-            throw new RuntimeException("Error loading key data for " + playerUuid);
+        var cachedData = cache.getIfPresent(playerUuid);
+        if (cachedData != null) {
+            return cachedData;
         }
+        var data = getKeyDataFromFile(playerUuid);
+        if (data == null) return null;
+        cache.put(playerUuid, data);
+        return data;
     }
 
     private ServerKeyData getKeyDataFromFile(UUID playerUuid) {
