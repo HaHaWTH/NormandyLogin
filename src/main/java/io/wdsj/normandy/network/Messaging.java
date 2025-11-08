@@ -155,7 +155,9 @@ public class Messaging implements PluginMessageListener {
             if (CryptoUtils.verify(challenge, signature, CryptoUtils.stringToPublicKey(publicKeyStr.publicKey()))) {
                 ComponentUtils.sendMessage(player, NormandyLogin.config().message_authentication_success);
                 NormandyLogin.logger().info("Player {} authenticated successfully via NormandyLogin.", player.getName());
-                NormandyLogin.getHook().loginPlayer(playerUuid);
+                if (!NormandyLogin.getHook().isPlayerLogin(playerUuid)) {
+                    NormandyLogin.getHook().loginPlayer(playerUuid);
+                }
             } else {
                 player.getScheduler().execute(plugin, () -> {
                     ComponentUtils.kick(player, NormandyLogin.config().message_invalid_signature);

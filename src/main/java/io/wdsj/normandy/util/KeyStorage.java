@@ -7,7 +7,6 @@ import com.google.gson.GsonBuilder;
 import io.wdsj.normandy.NormandyLogin;
 import io.wdsj.normandy.core.ServerKeyData;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileReader;
