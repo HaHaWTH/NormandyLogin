@@ -134,6 +134,7 @@ public class Messaging implements PluginMessageListener {
                     if (plugin.getPendingChallenges().containsKey(player.getUniqueId())) {
                         player.getScheduler().execute(plugin, () -> {
                             ComponentUtils.sendMessage(player, NormandyLogin.config().message_challenge_timed_out);
+                            plugin.getPendingChallenges().remove(player.getUniqueId());
                         }, null, 1L);
                     }
                 }, 20 * 20L);
