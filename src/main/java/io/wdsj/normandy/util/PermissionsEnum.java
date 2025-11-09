@@ -4,7 +4,9 @@ package io.wdsj.normandy.util;
  * Permission enums
  */
 public enum PermissionsEnum {
-    COMMAND_GENTOKEN("command.gentoken");
+    COMMAND_GENTOKEN("command.gentoken"),
+    COMMAND_REVOKETOKEN("command.revoketoken.self"),
+    COMMAND_REVOKETOKEN_OTHERS("command.revoketoken.others");
 
     private final String permission;
 

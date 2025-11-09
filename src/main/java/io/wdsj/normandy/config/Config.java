@@ -30,7 +30,7 @@ public class Config {
     public final String message_invalid_session, message_invalid_signature, message_authentication_success,
     message_error_occurred, message_key_saving_success, message_challenge_timed_out, message_plugin_disabled,
     message_no_permission, message_must_be_player, message_key_generation_sent, message_invalid_arguments,
-    message_generation_rate_limit, message_not_login_yet;
+    message_generation_rate_limit, message_not_login_yet, message_player_not_found, message_revoke_success;
 
     public Config(JavaPlugin plugin, File dataFolder) throws Exception {
         this.plugin = plugin;
@@ -74,6 +74,8 @@ public class Config {
         this.message_invalid_arguments = this.message_prefix + getString("messages.invalid-arguments", "<red>Invalid arguments.");
         this.message_generation_rate_limit = this.message_prefix + getString("messages.generation-rate-limit", "<red>You are generating tokens too quickly. Please wait.");
         this.message_not_login_yet = this.message_prefix + getString("messages.not-login-yet", "<red>You must login to perform this command.");
+        this.message_player_not_found = this.message_prefix + getString("messages.player-not-found", "<red>Player not found.");
+        this.message_revoke_success = this.message_prefix + getString("messages.revoke-success", "<green>Successfully revoked token.");
     }
 
     public void saveConfig() {

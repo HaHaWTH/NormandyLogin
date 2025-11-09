@@ -176,7 +176,7 @@ public class Messaging implements PluginMessageListener {
 
     private void handlePublicKeyShare(Player player, String publicKey) {
         CompletableFuture.runAsync(() -> {
-            plugin.getKeyStorage().saveKey(player.getUniqueId(), publicKey);
+            plugin.getKeyStorage().saveKey(player.getUniqueId(), publicKey, player.getName());
             ComponentUtils.sendMessage(player, NormandyLogin.config().message_key_saving_success);
             NormandyLogin.logger().info("Saved new public key for {}", player.getName());
         }, NormandyLogin.EXECUTOR_POOL);

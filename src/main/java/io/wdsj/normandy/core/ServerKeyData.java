@@ -1,4 +1,4 @@
 package io.wdsj.normandy.core;
 
-public record ServerKeyData(String publicKey, long timestamp) {
+public record ServerKeyData(String publicKey, long timestamp, String playerName) {
 }

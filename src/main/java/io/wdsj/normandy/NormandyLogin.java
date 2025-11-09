@@ -2,6 +2,7 @@ package io.wdsj.normandy;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.wdsj.normandy.command.GenerateTokenCommand;
+import io.wdsj.normandy.command.RevokeTokenCommand;
 import io.wdsj.normandy.config.Config;
 import io.wdsj.normandy.hook.AbstractHook;
 import io.wdsj.normandy.hook.NoOpHook;
@@ -65,6 +66,7 @@ public final class NormandyLogin extends JavaPlugin {
         messenger.registerOutgoingPluginChannel(this, PacketChannels.S2C.HANDSHAKE_ACK);
         getServer().getPluginManager().registerEvents(new QuitListener(), this);
         Objects.requireNonNull(getCommand("generatetoken")).setExecutor(new GenerateTokenCommand(this));
+        Objects.requireNonNull(getCommand("revoketoken")).setExecutor(new RevokeTokenCommand(this));
         hookPlugins();
     }
 

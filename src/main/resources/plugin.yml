@@ -11,7 +11,16 @@ commands:
   generatetoken:
     description: Generate an access token
     aliases: [gentoken]
+  revoketoken:
+    description: Revoke an access token
+    aliases: [deltoken, revoke, removetoken]
 permissions:
   normandylogin.command.gentoken:
     description: Allows the player to generate a access token
     default: true
+  normandylogin.command.revoketoken.self:
+    description: Allows the player to revoke a access token
+    default: true
+  normandylogin.command.revoketoken.others:
+    description: Allows the player to revoke a access token of others
+    default: op

@@ -32,9 +32,9 @@ public class KeyStorage {
         }
     }
 
-    public void saveKey(UUID playerUuid, String publicKey) {
+    public void saveKey(UUID playerUuid, String publicKey, String playerName) {
         cache.invalidate(playerUuid);
-        ServerKeyData data = new ServerKeyData(publicKey, System.currentTimeMillis());
+        ServerKeyData data = new ServerKeyData(publicKey, System.currentTimeMillis(), playerName);
         File playerFile = new File(storageDir, playerUuid + ".json");
 
         try (FileWriter writer = new FileWriter(playerFile)) {
@@ -53,6 +53,14 @@ public class KeyStorage {
         if (data == null) return null;
         cache.put(playerUuid, data);
         return data;
+    }
+
+    public boolean deleteKey(UUID playerUuid) {
+        File playerFile = new File(storageDir, playerUuid.toString() + ".json");
+        if (!playerFile.exists()) {
+            return false;
+        }
+        return playerFile.delete();
     }
 
     private ServerKeyData getKeyDataFromFile(UUID playerUuid) {
