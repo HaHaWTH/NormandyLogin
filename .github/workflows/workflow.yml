@@ -1,0 +1,37 @@
+name: Build NormandyLogin
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Gradle Cache Cleanup
+        run: |
+          mkdir -p ~/.gradle/caches/modules-2
+          [ -f ~/.gradle/caches/modules-2/modules-2.lock ] && rm -f ~/.gradle/caches/modules-2/modules-2.lock
+          find ~/.gradle/caches -name "*.lock" -type f -delete || echo "No lock files found"
+
+      - name: Setup java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Build NormandyLogin
+        run: ./gradlew build
+
+      - name: Upload NormandyLogin
+        uses: actions/upload-artifact@v5
+        with:
+          name: NormandyLogin-Bukkit
+          path: ./build/libs/NormandyLogin-*-all.jar
