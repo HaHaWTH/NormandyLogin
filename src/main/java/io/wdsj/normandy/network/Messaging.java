@@ -128,7 +128,8 @@ public class Messaging implements PluginMessageListener {
                         player.getScheduler().runDelayed(plugin, task -> {
                             plugin.getPacketSender().sendHandshakeAck(player);
                         }, null, 10L);
-                        if (System.currentTimeMillis() - keyData.timestamp() > TimeUnit.HOURS.toMillis(NormandyLogin.config().token_expire_hours)) {
+                        final int hours = NormandyLogin.config().token_expire_hours;
+                        if (hours > 0 && System.currentTimeMillis() - keyData.timestamp() > TimeUnit.HOURS.toMillis(hours)) {
                             plugin.getKeyStorage().deleteKey(player.getUniqueId());
                             ComponentUtils.sendMessage(player, NormandyLogin.config().message_token_expired);
                             return;
