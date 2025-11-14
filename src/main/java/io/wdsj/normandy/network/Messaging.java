@@ -124,13 +124,11 @@ public class Messaging implements PluginMessageListener {
         plugin.getKeyStorage().getKeyDataAsync(player.getUniqueId())
                 .thenAccept(keyData -> {
                     if (keyData != null) {
-                        player.getScheduler().runDelayed(plugin, task -> {
-                            plugin.getPacketSender().sendHandshakeAck(player);
-                        }, null, 10L);
+                        player.getScheduler().runDelayed(plugin, task -> plugin.getPacketSender().sendHandshakeAck(player), null, 10L);
                         final int hours = NormandyLogin.config().token_expire_hours;
                         if (hours > 0 && System.currentTimeMillis() - keyData.timestamp() > TimeUnit.HOURS.toMillis(hours)) {
                             plugin.getKeyStorage().deleteKey(player.getUniqueId());
-                            ComponentUtils.sendMessage(player, NormandyLogin.config().message_token_expired);
+                            player.getScheduler().execute(plugin, () -> ComponentUtils.sendMessage(player, NormandyLogin.config().message_token_expired), null, 1L);
                             return;
                         }
                         CompletableFuture.supplyAsync(() -> CryptoUtils.generateChallenge(64), NormandyLogin.EXECUTOR_POOL).thenAccept(challenge -> {
@@ -175,15 +173,11 @@ public class Messaging implements PluginMessageListener {
                                 }
                             }, null, 5L);
                         } else {
-                            player.getScheduler().execute(plugin, () -> {
-                                ComponentUtils.kick(player, NormandyLogin.config().message_invalid_signature);
-                            }, null, 1L);
+                            player.getScheduler().execute(plugin, () -> ComponentUtils.kick(player, NormandyLogin.config().message_invalid_signature), null, 1L);
                         }
                     } catch (Exception e) {
                         NormandyLogin.logger().error("Error during signature verification for {}.", player.getName(), e);
-                        player.getScheduler().execute(plugin, () -> {
-                            ComponentUtils.kick(player, NormandyLogin.config().message_error_occurred);
-                        }, null, 1L);
+                        player.getScheduler().execute(plugin, () -> ComponentUtils.kick(player, NormandyLogin.config().message_error_occurred), null, 1L);
                     }
                 });
     }
@@ -193,12 +187,10 @@ public class Messaging implements PluginMessageListener {
                         .thenAccept(success -> {
                             if (!player.isConnected()) return;
                             if (!success) {
-                                player.getScheduler().execute(plugin, () -> {
-                                    ComponentUtils.kick(player, NormandyLogin.config().message_error_occurred);
-                                }, null, 1L);
+                                player.getScheduler().execute(plugin, () -> ComponentUtils.kick(player, NormandyLogin.config().message_error_occurred), null, 1L);
                                 return;
                             }
-                            ComponentUtils.sendMessage(player, NormandyLogin.config().message_key_saving_success);
+                            player.getScheduler().execute(plugin, () -> ComponentUtils.sendMessage(player, NormandyLogin.config().message_key_saving_success), null, 1L);
                             NormandyLogin.logger().info("Saved new public key for {}", player.getName());
                         });
     }
