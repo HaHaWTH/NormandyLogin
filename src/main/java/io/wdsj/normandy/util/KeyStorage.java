@@ -13,6 +13,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class KeyStorage {
@@ -44,6 +45,10 @@ public class KeyStorage {
         }
     }
 
+    public void saveKeyAsync(UUID playerUuid, String publicKey, String playerName) {
+        CompletableFuture.runAsync(() -> saveKey(playerUuid, publicKey, playerName), NormandyLogin.EXECUTOR_POOL);
+    }
+
     public ServerKeyData getKeyData(UUID playerUuid) {
         var cachedData = cache.getIfPresent(playerUuid);
         if (cachedData != null) {
@@ -55,12 +60,20 @@ public class KeyStorage {
         return data;
     }
 
+    public CompletableFuture<ServerKeyData> getKeyDataAsync(UUID playerUuid) {
+        return CompletableFuture.supplyAsync(() -> getKeyData(playerUuid), NormandyLogin.EXECUTOR_POOL);
+    }
+
     public boolean deleteKey(UUID playerUuid) {
         File playerFile = new File(storageDir, playerUuid.toString() + ".json");
         if (!playerFile.exists()) {
             return false;
         }
         return playerFile.delete();
+    }
+
+    public CompletableFuture<Boolean> deleteKeyAsync(UUID playerUuid) {
+        return CompletableFuture.supplyAsync(() -> deleteKey(playerUuid), NormandyLogin.EXECUTOR_POOL);
     }
 
     private ServerKeyData getKeyDataFromFile(UUID playerUuid) {

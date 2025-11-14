@@ -4,7 +4,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import io.wdsj.normandy.NormandyLogin;
-import io.wdsj.normandy.core.ServerKeyData;
 import io.wdsj.normandy.util.ComponentUtils;
 import io.wdsj.normandy.util.CryptoUtils;
 import org.bukkit.Bukkit;
@@ -122,7 +121,7 @@ public class Messaging implements PluginMessageListener {
     }
 
     private void handleHandshake(Player player) {
-        CompletableFuture.supplyAsync(() -> plugin.getKeyStorage().getKeyData(player.getUniqueId()), NormandyLogin.EXECUTOR_POOL)
+        plugin.getKeyStorage().getKeyDataAsync(player.getUniqueId())
                 .thenAccept(keyData -> {
                     if (keyData != null) {
                         player.getScheduler().runDelayed(plugin, task -> {
@@ -164,34 +163,34 @@ public class Messaging implements PluginMessageListener {
             return;
         }
 
-        ServerKeyData publicKeyStr = plugin.getKeyStorage().getKeyData(playerUuid);
-        try {
-            if (CryptoUtils.verify(challenge, signature, CryptoUtils.stringToPublicKey(publicKeyStr.publicKey()))) {
-                ComponentUtils.sendMessage(player, NormandyLogin.config().message_authentication_success);
-                NormandyLogin.logger().info("Player {} authenticated successfully via NormandyLogin.", player.getName());
-                player.getScheduler().execute(plugin, () -> {
-                    if (!NormandyLogin.getHook().isPlayerLogin(playerUuid)) {
-                        NormandyLogin.getHook().loginPlayer(playerUuid);
+        plugin.getKeyStorage().getKeyDataAsync(playerUuid)
+                .thenAccept(serverKeyData -> {
+                    try {
+                        if (CryptoUtils.verify(challenge, signature, CryptoUtils.stringToPublicKey(serverKeyData.publicKey()))) {
+                            player.getScheduler().execute(plugin, () -> ComponentUtils.sendMessage(player, NormandyLogin.config().message_authentication_success), null, 1L);
+                            NormandyLogin.logger().info("Player {} authenticated successfully via NormandyLogin.", player.getName());
+                            player.getScheduler().execute(plugin, () -> {
+                                if (!NormandyLogin.getHook().isPlayerLogin(playerUuid)) {
+                                    NormandyLogin.getHook().loginPlayer(playerUuid);
+                                }
+                            }, null, 5L);
+                        } else {
+                            player.getScheduler().execute(plugin, () -> {
+                                ComponentUtils.kick(player, NormandyLogin.config().message_invalid_signature);
+                            }, null, 1L);
+                        }
+                    } catch (Exception e) {
+                        NormandyLogin.logger().error("Error during signature verification for {}.", player.getName(), e);
+                        player.getScheduler().execute(plugin, () -> {
+                            ComponentUtils.kick(player, NormandyLogin.config().message_error_occurred);
+                        }, null, 1L);
                     }
-                }, null, 5L);
-            } else {
-                player.getScheduler().execute(plugin, () -> {
-                    ComponentUtils.kick(player, NormandyLogin.config().message_invalid_signature);
-                }, null, 1L);
-            }
-        } catch (Exception e) {
-            NormandyLogin.logger().error("Error during signature verification for {}.", player.getName(), e);
-            player.getScheduler().execute(plugin, () -> {
-                ComponentUtils.kick(player, NormandyLogin.config().message_error_occurred);
-            }, null, 1L);
-        }
+                });
     }
 
     private void handlePublicKeyShare(Player player, String publicKey) {
-        CompletableFuture.runAsync(() -> {
-            plugin.getKeyStorage().saveKey(player.getUniqueId(), publicKey, player.getName());
-            ComponentUtils.sendMessage(player, NormandyLogin.config().message_key_saving_success);
-            NormandyLogin.logger().info("Saved new public key for {}", player.getName());
-        }, NormandyLogin.EXECUTOR_POOL);
+        plugin.getKeyStorage().saveKeyAsync(player.getUniqueId(), publicKey, player.getName());
+        ComponentUtils.sendMessage(player, NormandyLogin.config().message_key_saving_success);
+        NormandyLogin.logger().info("Saved new public key for {}", player.getName());
     }
 }
