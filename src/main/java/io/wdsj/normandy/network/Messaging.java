@@ -18,6 +18,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class Messaging implements PluginMessageListener {
 
@@ -121,27 +122,37 @@ public class Messaging implements PluginMessageListener {
     }
 
     private void handleHandshake(Player player) {
-        if (plugin.getKeyStorage().getKeyData(player.getUniqueId()) != null) {
-            CompletableFuture.supplyAsync(() -> CryptoUtils.generateChallenge(64), NormandyLogin.EXECUTOR_POOL).thenAccept(challenge -> {
-                plugin.getPendingChallenges().put(player.getUniqueId(), challenge);
-                player.getScheduler().runDelayed(plugin, task -> {
-                    plugin.getPacketSender().sendHandshakeAck(player);
-                    plugin.getPacketSender().sendLoginChallenge(player, challenge);
-                    NormandyLogin.logger().info("Sent login challenge to {}", player.getName());
-                }, null, 10L);
+        CompletableFuture.supplyAsync(() -> plugin.getKeyStorage().getKeyData(player.getUniqueId()), NormandyLogin.EXECUTOR_POOL)
+                .thenAccept(keyData -> {
+                    if (keyData != null) {
+                        player.getScheduler().runDelayed(plugin, task -> {
+                            plugin.getPacketSender().sendHandshakeAck(player);
+                        }, null, 10L);
+                        if (System.currentTimeMillis() - keyData.timestamp() > TimeUnit.HOURS.toMillis(NormandyLogin.config().token_expire_hours)) {
+                            plugin.getKeyStorage().deleteKey(player.getUniqueId());
+                            ComponentUtils.sendMessage(player, NormandyLogin.config().message_token_expired);
+                            return;
+                        }
+                        CompletableFuture.supplyAsync(() -> CryptoUtils.generateChallenge(64), NormandyLogin.EXECUTOR_POOL).thenAccept(challenge -> {
+                            plugin.getPendingChallenges().put(player.getUniqueId(), challenge);
+                            player.getScheduler().runDelayed(plugin, task -> {
+                                plugin.getPacketSender().sendLoginChallenge(player, challenge);
+                                NormandyLogin.logger().info("Sent login challenge to {}", player.getName());
+                            }, null, 10L);
 
-                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> {
-                    if (plugin.getPendingChallenges().containsKey(player.getUniqueId())) {
-                        player.getScheduler().execute(plugin, () -> {
-                            ComponentUtils.sendMessage(player, NormandyLogin.config().message_challenge_timed_out);
-                            plugin.getPendingChallenges().remove(player.getUniqueId());
-                        }, null, 1L);
+                            plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> {
+                                if (plugin.getPendingChallenges().containsKey(player.getUniqueId())) {
+                                    player.getScheduler().execute(plugin, () -> {
+                                        ComponentUtils.sendMessage(player, NormandyLogin.config().message_challenge_timed_out);
+                                        plugin.getPendingChallenges().remove(player.getUniqueId());
+                                    }, null, 1L);
+                                }
+                            }, 20 * 20L);
+                        });
+                    } else {
+                        Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> plugin.getPacketSender().sendHandshakeAck(player), 5L);
                     }
-                }, 20 * 20L);
-            });
-        } else {
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> plugin.getPacketSender().sendHandshakeAck(player), 5L);
-        }
+                });
     }
 
     private void handleChallengeResponse(Player player, String signature) {

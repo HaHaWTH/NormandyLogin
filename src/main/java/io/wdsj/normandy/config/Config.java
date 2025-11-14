@@ -23,6 +23,7 @@ public class Config {
     public final boolean use_uuid_as_identifier;
     public final UUID server_identifier;
     public final int generation_rate_limit;
+    public final int token_expire_hours;
     public final PluginEnum hooked_plugin;
 
     /* Message config */
@@ -30,7 +31,7 @@ public class Config {
     public final String message_invalid_session, message_invalid_signature, message_authentication_success,
     message_error_occurred, message_key_saving_success, message_challenge_timed_out, message_plugin_disabled,
     message_no_permission, message_must_be_player, message_key_generation_sent, message_invalid_arguments,
-    message_generation_rate_limit, message_not_login_yet, message_player_not_found, message_revoke_success;
+    message_generation_rate_limit, message_not_login_yet, message_player_not_found, message_revoke_success, message_token_expired;
 
     public Config(JavaPlugin plugin, File dataFolder) throws Exception {
         this.plugin = plugin;
@@ -58,6 +59,7 @@ public class Config {
                 AuthMe
                 Auto
                 """).toUpperCase(Locale.ROOT));
+        this.token_expire_hours = getInt("plugin.token-expire-hours", 168, "When will the client's token expire? Leave as -1 to disable expiration (not recommended)");
 
 
         this.message_prefix = getString("messages.prefix", "<gold>[Normandy Login] ");
@@ -76,6 +78,7 @@ public class Config {
         this.message_not_login_yet = this.message_prefix + getString("messages.not-login-yet", "<red>You must login to perform this command.");
         this.message_player_not_found = this.message_prefix + getString("messages.player-not-found", "<red>Player not found.");
         this.message_revoke_success = this.message_prefix + getString("messages.revoke-success", "<green>Successfully revoked token.");
+        this.message_token_expired = this.message_prefix + getString("messages.token-expired", "<red>Your token has expired. Please login again.");
     }
 
     public void saveConfig() {
