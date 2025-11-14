@@ -33,23 +33,25 @@ public class KeyStorage {
         }
     }
 
-    public void saveKey(UUID playerUuid, String publicKey, String playerName) {
+    public synchronized boolean saveKey(UUID playerUuid, String publicKey, String playerName) {
         cache.invalidate(playerUuid);
         ServerKeyData data = new ServerKeyData(publicKey, System.currentTimeMillis(), playerName);
         File playerFile = new File(storageDir, playerUuid + ".json");
 
         try (FileWriter writer = new FileWriter(playerFile)) {
             gson.toJson(data, writer);
+            return true;
         } catch (IOException e) {
             NormandyLogin.logger().error("Error saving key for {}.", playerUuid, e);
         }
+        return false;
     }
 
-    public void saveKeyAsync(UUID playerUuid, String publicKey, String playerName) {
-        CompletableFuture.runAsync(() -> saveKey(playerUuid, publicKey, playerName), NormandyLogin.EXECUTOR_POOL);
+    public CompletableFuture<Boolean> saveKeyAsync(UUID playerUuid, String publicKey, String playerName) {
+        return CompletableFuture.supplyAsync(() -> saveKey(playerUuid, publicKey, playerName), NormandyLogin.EXECUTOR_POOL);
     }
 
-    public ServerKeyData getKeyData(UUID playerUuid) {
+    public synchronized ServerKeyData getKeyData(UUID playerUuid) {
         var cachedData = cache.getIfPresent(playerUuid);
         if (cachedData != null) {
             return cachedData;
@@ -64,8 +66,9 @@ public class KeyStorage {
         return CompletableFuture.supplyAsync(() -> getKeyData(playerUuid), NormandyLogin.EXECUTOR_POOL);
     }
 
-    public boolean deleteKey(UUID playerUuid) {
-        File playerFile = new File(storageDir, playerUuid.toString() + ".json");
+    public synchronized boolean deleteKey(UUID playerUuid) {
+        cache.invalidate(playerUuid);
+        File playerFile = new File(storageDir, playerUuid + ".json");
         if (!playerFile.exists()) {
             return false;
         }

@@ -189,8 +189,17 @@ public class Messaging implements PluginMessageListener {
     }
 
     private void handlePublicKeyShare(Player player, String publicKey) {
-        plugin.getKeyStorage().saveKeyAsync(player.getUniqueId(), publicKey, player.getName());
-        ComponentUtils.sendMessage(player, NormandyLogin.config().message_key_saving_success);
-        NormandyLogin.logger().info("Saved new public key for {}", player.getName());
+        plugin.getKeyStorage().saveKeyAsync(player.getUniqueId(), publicKey, player.getName())
+                        .thenAccept(success -> {
+                            if (!player.isConnected()) return;
+                            if (!success) {
+                                player.getScheduler().execute(plugin, () -> {
+                                    ComponentUtils.kick(player, NormandyLogin.config().message_error_occurred);
+                                }, null, 1L);
+                                return;
+                            }
+                            ComponentUtils.sendMessage(player, NormandyLogin.config().message_key_saving_success);
+                            NormandyLogin.logger().info("Saved new public key for {}", player.getName());
+                        });
     }
 }
